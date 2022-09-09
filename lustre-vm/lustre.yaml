@@ -1,0 +1,19 @@
+# Copyright (C) 2022 Nippon Telegraph and Telephone Corporation.
+images:
+- location: "https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.3.2011-20201204.2.x86_64.qcow2"
+  arch: "x86_64"
+  digest: "sha256:7ec97062618dc0a7ebf211864abf63629da1f325578868579ee70c495bed3ba0"
+
+mounts:
+- location: "~"
+- location: "/tmp/lima"
+  writable: true
+env:
+  SLURM_CONF: "/etc/slurm/slurm.conf"
+
+firmware:
+  legacyBIOS: true
+cpuType:
+  # Workaround for "vmx_write_mem: mmu_gva_to_gpa XXXXXXXXXXXXXXXX failed" on Intel Mac
+  # https://bugs.launchpad.net/qemu/+bug/1838390
+  x86_64: "Haswell-v4"
