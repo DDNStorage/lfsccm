@@ -153,7 +153,7 @@ class Pcc(object):
 
     def _run_ssh(self, commands, login_user='root', timeout=TIMEOUT):
         results = []
-        client = paramiko.SSHClient()
+        client = paramiko.client.SSHClient()
         client.load_system_host_keys()
         client.set_missing_host_key_policy(paramiko.WarningPolicy())
 
@@ -167,7 +167,6 @@ class Pcc(object):
                 "stdout": str(stdout.read(), 'utf-8'),
                 "stderr": str(stderr.read(), 'utf-8'),
             })
-
         client.close()
         return results
 
@@ -302,7 +301,7 @@ def parse_arg(arg):
     return arg.replace(' ', '').split(',')
 
 
-def main():
+def main()->int:
     logger = setup_logger(__name__)
 
     options, args = getopt.getopt(
@@ -328,17 +327,17 @@ def main():
             files.append(arg)
         elif opt in ('-h', '--help'):
             usage()
-            sys.exit(1)
+            return 1
         else:
             logger.error("Invalid option [{}]".format(opt))
             usage()
-            sys.exit(1)
+            return 1
 
     # check action
     if not args:
         logger.error("Please input action")
         usage()
-        sys.exit(-1)
+        return -1
 
     action = args[0].lower()
 
@@ -364,13 +363,13 @@ def main():
             pcc.validate(action)
         except Exception as e:
             logger.error("{}".format(str(e)))
-            sys.exit(-1)
+            return -1
 
     # Run actions
     if action in VALIED_ACTIONS:
         ret = parallel_do_action(pccs, action)
         for node, results in ret.items():
-            for result in results.get():
+            for result in results:
                 if result['stderr']:
                     logger.warning("{}: {}\n{}".format(
                         node.hostname, result['arg'], result['stderr']))
@@ -381,7 +380,7 @@ def main():
         ret = parallel_do_action(pccs, action)
         check = True
         for node, results in ret.items():
-            for result in results.get():
+            for result in results:
                 if result['rc'] == 0:
                     continue
                 else:
@@ -389,9 +388,9 @@ def main():
                     logger.warning("{}: {}\n{}".format(
                         node.hostname, result['arg'], result['stderr']))
         if not check:
-            sys.exit(1)
+            return 1
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == "__main__":
