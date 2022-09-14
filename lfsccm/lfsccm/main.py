@@ -368,8 +368,8 @@ def main()->int:
     # Run actions
     if action in VALIED_ACTIONS:
         ret = parallel_do_action(pccs, action)
-        for node, results in ret.items():
-            for result in results:
+        for node, async_result in ret.items():
+            for result in async_result.get():
                 if result['stderr']:
                     logger.warning("{}: {}\n{}".format(
                         node.hostname, result['arg'], result['stderr']))
@@ -379,8 +379,8 @@ def main()->int:
         action = action.replace('-', '_')
         ret = parallel_do_action(pccs, action)
         check = True
-        for node, results in ret.items():
-            for result in results:
+        for node, async_result in ret.items():
+            for result in async_result.get():
                 if result['rc'] == 0:
                     continue
                 else:
