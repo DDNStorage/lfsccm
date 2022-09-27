@@ -20,8 +20,8 @@ sudo systemctl enable --now munge
 
 # download bz2 slurm source file
 cd ${HOME}
-#wget https://download.schedmd.com/slurm/${SLURM_SOURCE}
-#rpmbuild -ta ${SLURM_SOURCE}
+wget https://download.schedmd.com/slurm/${SLURM_SOURCE}
+rpmbuild -ta ${SLURM_SOURCE}
 
 # install slurm software via rpm
 sudo yum localinstall -y ${HOME}/rpmbuild/RPMS/x86_64/*.rpm
@@ -33,10 +33,7 @@ sudo sed -i 's/SlurmUser=slurm/SlurmUser=root/g' /etc/slurm/slurm.conf
 sudo sed -i 's/NodeName=linux\[1-32\] CPUs=1/NodeName=lima-lustre CPUs=4 CoresPerSocket=4/g' /etc/slurm/slurm.conf
 sudo cp /etc/slurm/cgroup.conf.example /etc/slurm/cgroup.conf
 
-# FIXME: remove elevate dependencies (see https://github.com/bunag/GDS-tools/issues/18)
-
 sudo pip3.8 install -r ${PACKAGE_DIR}/lfsccm/requirements.txt
-# see https://github.com/bunag/GDS-tools/issues/19
 sudo pip3.8 install ${PACKAGE_DIR}/lfsccm
 sudo sh -c "echo 'Directive=PCC' > /etc/slurm/burst_buffer.conf"
 sudo sh -c "echo 'NodeName=lima-lustre rwid=1 roid=1' > /etc/slurm/lfsccm.conf"
