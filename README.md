@@ -110,6 +110,18 @@ limactl shell lustre
 
 The test environment depends on [Lima](https://github.com/lima-vm/), hence intall lima first when you try it.
 
+## Development
+`lfsccm` package uses python nose2 test suite. After you prepare your python developing envrionment, the following commands run the test locally:
+```
+git clone https://github.com/DDNStorage/lfsccm.git
+cd lfsccm/lfsccm
+# install dependencies
+pip install -r requirements.txt
+pip install -r test-requirements.txt
+# run nose2 module to lfsccm package
+python -m nose2
+```
+
 ## Appendix
 - Burst Buffer Lua Plugin is an optional feature of Slurm Workload Manger, hence you have to enable it in Slurm configuration.
 - The basic information for Slurm Burst Buffer Lua is at https://slurm.schedmd.com/burst_buffer.html. (See [for system admin](https://slurm.schedmd.com/burst_buffer.html#configuration) more detail)
