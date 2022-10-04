@@ -6,7 +6,6 @@
 # http://opensource.org/licenses/mit-license.php
 
 
-import getopt
 import glob
 import logging
 import os
@@ -16,6 +15,8 @@ import sys
 from distutils.version import LooseVersion
 from itertools import zip_longest
 from multiprocessing import Pool
+import argparse
+
 
 # Global
 SSH_USER = 'root'  # os.getlogin()
@@ -243,6 +244,26 @@ class PccFiles(object):
         return rw_files, ro_files
 
 
+class BaseListArgAction(argparse.Action):
+    my_type = None
+    def __init__(self, option_strings, dest, **kwargs):
+        if not self.my_type:
+            raise NotImplementedError()
+        super().__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string):
+        values = [self.my_type(v) for v in values.split(",")]
+        setattr(namespace, self.dest, values)
+
+
+class StrListArgAction(BaseListArgAction):
+    my_type = str
+
+
+class IntListArgAction(BaseListArgAction):
+    my_type = int
+
+
 def setup_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -309,42 +330,38 @@ def parse_arg(arg):
 def main() -> int:
     logger = setup_logger(__name__)
 
-    options, args = getopt.getopt(
-        sys.argv[1:],
-        "n:w:r:f:h",
-        ["nodes=",
-         "rw-ids=",
-         "ro-ids=",
-         "files=",
-         "help"]
-    )
-
-    # check options
-    nodes, rw_ids, ro_ids, files = ([] for i in range(4))
-    for opt, arg in options:
-        if opt in ('-n', '--nodes'):
-            nodes = parse_arg(arg)
-        elif opt in ('-w', '--rw-ids'):
-            rw_ids = parse_arg(arg)
-        elif opt in ('-r', '--ro-ids'):
-            ro_ids = parse_arg(arg)
-        elif opt in ('-f', '--files'):
-            files.append(arg)
-        elif opt in ('-h', '--help'):
-            usage()
-            return 1
-        else:
-            logger.error("Invalid option [{}]".format(opt))
-            usage()
-            return 1
+    parser = argparse.ArgumentParser(
+        exit_on_error=False)
+    parser.add_argument("actions")
+    parser.add_argument(
+        "-n", "--nodes", type=str,
+        default="",
+        action=StrListArgAction)
+    parser.add_argument(
+        "-w", "--rw-ids", type=str,
+        default="",
+        action=IntListArgAction)
+    parser.add_argument(
+        "-r", "--ro-ids", type=str,
+        default="",
+        action=IntListArgAction)
+    parser.add_argument(
+        "-f", "--files", type=str,
+        default="",
+        action=StrListArgAction)
+    args = parser.parse_args()
 
     # check action
-    if not args:
+    if not args.actions:
         logger.error("Please input action")
         usage()
         return -1
 
-    action = args[0].lower()
+    action = args.actions
+    nodes = args.nodes
+    ro_ids = args.ro_ids
+    rw_ids = args.rw_ids
+    files = args.files
 
     # Set default
     if action in VALIED_CHK_ACTIONS:

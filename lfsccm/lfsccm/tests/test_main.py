@@ -45,7 +45,11 @@ class TestMain(BaseTestMain):
     argv = "lfsccm"
 
     def test_main_no_action(self):
-        self.assertEqual(-1, main.main())
+        with self.assertRaises(SystemExit):
+            # FIXME: later than python 3.9, we could use exit_on_error
+            # instead of bare syste exit on argument error
+            # https://docs.python.org/ja/3/library/argparse.html#exit-on-error
+            main.main()
 
 
 @mock.patch("paramiko.client.SSHClient.connect")
