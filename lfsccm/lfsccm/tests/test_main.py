@@ -45,20 +45,13 @@ class TestMain(BaseTestMain):
     argv = "lfsccm"
 
     def test_main_no_action(self):
-        with self.assertRaises(SystemExit):
-            # FIXME: later than python 3.9, we could use exit_on_error
-            # instead of bare syste exit on argument error
-            # https://docs.python.org/ja/3/library/argparse.html#exit-on-error
-            main.main()
+        self.assertEqual(-1, main.main())
 
 
 @mock.patch("paramiko.client.SSHClient.connect")
 @mock.patch("paramiko.client.SSHClient.exec_command")
 class TestMainCheckFiles(BaseTestMain):
-    # FIXME: use something like optparse to add options in anywhare
-    # in the args, and handle syntax errors to notify what was wrong
-    # with in the errors.
-    argv = "lfsccm --files=/sample/file:ro:0 check-files"
+    argv = "lfsccm check-files --files=/sample/file:ro:0"
 
     @mock.patch("sys.argv", ["lfsccm", "check-files"])
     def test_check_files_no_files_specified(self, mock_exec, mock_connect):
