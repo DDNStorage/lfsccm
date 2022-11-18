@@ -1,9 +1,10 @@
+#!/usr/bin/python3 -u
+
 # Copyright (C) 2022 Nippon Telegraph and Telephone Corporation.
 #
 # This software is released under the MIT License.
 # http://opensource.org/licenses/mit-license.php
 
-#!/usr/bin/python3 -u
 
 import getopt
 import glob
@@ -101,10 +102,12 @@ class Pcc(object):
                 return results
 
             for version in ver_m.groups():
-                if not LooseVersion(version) > LooseVersion(MIN_LUSTRE_VERSION):
+                if not LooseVersion(version) > \
+                        LooseVersion(MIN_LUSTRE_VERSION):
                     result['rc'] = 1
                     result['stderr'] = \
-                        "PCC RO mode requires Lustre {} or higher, but detected version is {}".format(
+                        "PCC RO mode requires Lustre {} or higher, " \
+                        "but detected version is {}".format(
                             MIN_LUSTRE_VERSION, version)
         return results
 
@@ -219,12 +222,13 @@ class PccFiles(object):
             is_recursive = False
             if recursive == 'r':
                 is_recursive = True
-                filepath = re.sub('\*+', '**', filepath)
+                filepath = re.sub('\\*+', '**', filepath)
 
             target_files = []
             for expand_file in filepath.split(','):  # expand_file=[path]
                 if '*' in expand_file:
-                    target_files.extend(glob.glob(expand_file, recursive=is_recursive))
+                    target_files.extend(
+                        glob.glob(expand_file, recursive=is_recursive))
                 else:
                     target_files.append(expand_file)
 
@@ -279,8 +283,9 @@ def usage():
 def wrapper_action(node, action):
     try:
         func = node.__getattribute__(action)
-    except:
-        logger.error("Not [%s] function of %s", action, node.__class__)
+    except AttributeError:
+        # FIXME: this logger is used before assignment
+        # logger.error("Not [%s] function of %s", action, node.__class__)
         return -1
     return func()
 
@@ -301,7 +306,7 @@ def parse_arg(arg):
     return arg.replace(' ', '').split(',')
 
 
-def main()->int:
+def main() -> int:
     logger = setup_logger(__name__)
 
     options, args = getopt.getopt(

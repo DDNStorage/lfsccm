@@ -34,7 +34,7 @@ class BaseTestMain(unittest.TestCase):
         for patch in self.patchers:
             patch.stop()
 
-    def mock_io(self, body: str="", status: int=0):
+    def mock_io(self, body: str = "", status: int = 0):
         mock_io = mock.MagicMock()
         mock_io.read = lambda: body.encode("utf8")
         mock_io.channel.recv_exit_status.return_value = 0
