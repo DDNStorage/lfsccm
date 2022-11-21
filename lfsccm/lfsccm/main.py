@@ -11,7 +11,6 @@ import logging
 import os
 import paramiko
 import re
-import sys
 from distutils.version import LooseVersion
 from itertools import zip_longest
 from multiprocessing import Pool
@@ -368,10 +367,10 @@ def main() -> int:
         **files_options["kwargs"])
 
     # check-ro-available
-    ro_check_parser = sub_parser.add_parser("check-ro-available")
+    sub_parser.add_parser("check-ro-available")
 
     try:
-                                        args = parser.parse_args()
+        args = parser.parse_args()
     except SystemExit:
         parser.print_help()
         return -1
@@ -387,7 +386,7 @@ def main() -> int:
     nodes = []
     ro_ids = []
     rw_ids = []
-    files =  []
+    files = []
     if hasattr(args, "nodes"):
         nodes = args.nodes
     if hasattr(args, "ro_ids"):
