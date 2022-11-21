@@ -194,14 +194,14 @@ class Pcc(object):
     def _validate_rw_id(self):
         if not self.rw_id:
             raise Exception("Missing rw_id")
-        if not self.rw_id.isdecimal():
-            raise Exception("rw_id is not decimal: {}".format(self.rw_id))
+        if not isinstance(self.rw_id, int):
+            raise Exception("rw_id must be int: {}".format(self.rw_id))
 
     def _validate_ro_id(self):
         if not self.ro_id:
             raise Exception("Missing ro_id")
-        if not self.ro_id.isdecimal():
-            raise Exception("ro_id is not decimal: {}".format(self.ro_id))
+        if not isinstance(self.ro_id, int):
+            raise Exception("ro_id mubst be int: {}".format(self.ro_id))
 
     def _validate_pcc_files(self):
         if not self.pcc_files:
@@ -333,12 +333,6 @@ def parallel_do_action(nodes, action):
     return results
 
 
-def parse_arg(arg):
-    if not arg:
-        return []
-    return arg.replace(' ', '').split(',')
-
-
 def main() -> int:
     logger = setup_logger(__name__)
 
@@ -348,13 +342,13 @@ def main() -> int:
         help="Action verb for operation")
     attach_parser = sub_parser.add_parser("attach")
     # attach
-    for option in ["nodes", "roids", "rwids"]:
+    for option in ["nodes", "roids", "rwids", "files"]:
         attach_parser.add_argument(
             *AVAILABLE_OPTIONS[option]["kargs"],
             **AVAILABLE_OPTIONS[option]["kwargs"])
     # detach
     detach_parser = sub_parser.add_parser("detach")
-    for option in ["nodes", "roids", "rwids"]:
+    for option in ["nodes", "roids", "rwids", "files"]:
         detach_parser.add_argument(
             *AVAILABLE_OPTIONS[option]["kargs"],
             **AVAILABLE_OPTIONS[option]["kwargs"])
@@ -377,7 +371,7 @@ def main() -> int:
     ro_check_parser = sub_parser.add_parser("check-ro-available")
 
     try:
-        args = parser.parse_args()
+                                        args = parser.parse_args()
     except SystemExit:
         parser.print_help()
         return -1
@@ -395,7 +389,7 @@ def main() -> int:
     rw_ids = []
     files =  []
     if hasattr(args, "nodes"):
-        ro_ids = args.nodes
+        nodes = args.nodes
     if hasattr(args, "ro_ids"):
         ro_ids = args.ro_ids
     if hasattr(args, "rw_ids"):
