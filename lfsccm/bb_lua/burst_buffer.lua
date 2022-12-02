@@ -616,8 +616,8 @@ function _cache_pcc(req_nodes, files)
     -- Check SSH connection
     local cmd = {}
     table.insert(cmd, "lfsccm")
-    table.insert(cmd, "--nodes="..table.concat(node_tbl, ","))
     table.insert(cmd, "check-ssh-connection")
+    table.insert(cmd, "--nodes="..table.concat(node_tbl, ","))
     slurm.log_info("%s: _cache_pcc(). cmd: %s", lua_script_name, table.concat(cmd, " "))
     local _, _, rc = os.execute(table.concat(cmd, " "))
     if rc ~= 0 then
@@ -628,6 +628,7 @@ function _cache_pcc(req_nodes, files)
     -- Cache files
     local cmd = {}
     table.insert(cmd, "lfsccm")
+    table.insert(cmd, "attach")
     table.insert(cmd, "--nodes="..table.concat(node_tbl, ","))
     table.insert(cmd, "--rw-ids="..table.concat(rwid_tbl, ","))
     table.insert(cmd, "--ro-ids="..table.concat(roid_tbl, ","))
@@ -635,7 +636,6 @@ function _cache_pcc(req_nodes, files)
         table.insert(cmd, "--files="..file)
     end
 
-    table.insert(cmd, "attach")
     slurm.log_info("%s: _cache_pcc(). cmd: %s", lua_script_name, table.concat(cmd, " "))
 
     local handle = io.popen(table.concat(cmd, " ").." 2>&1")
@@ -884,10 +884,10 @@ function _check_files(files)
     local err = nil
     local cmd = {}
     table.insert(cmd, "lfsccm")
+    table.insert(cmd, "check-files")
     for _, file in ipairs(files) do
         table.insert(cmd, "--files="..file)
     end
-    table.insert(cmd, "check-files")
     slurm.log_info("%s: _check_files(). cmd: %s", lua_script_name, table.concat(cmd, " "))
 
     local handle = io.popen(table.concat(cmd, " ").." 2>&1")

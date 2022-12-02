@@ -6,16 +6,16 @@
 # http://opensource.org/licenses/mit-license.php
 
 
-import getopt
 import glob
 import logging
 import os
 import paramiko
 import re
-import sys
 from distutils.version import LooseVersion
 from itertools import zip_longest
 from multiprocessing import Pool
+import argparse
+
 
 # Global
 SSH_USER = 'root'  # os.getlogin()
@@ -31,6 +31,59 @@ VALIED_CHK_ACTIONS = [
     "check-files",
     "check-ro-available"
 ]
+
+
+class BaseListArgAction(argparse.Action):
+    my_type = None
+
+    def __init__(self, option_strings, dest, **kwargs):
+        if not self.my_type:
+            raise NotImplementedError()
+        super().__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string):
+        values = [self.my_type(v) for v in values.split(",")]
+        setattr(namespace, self.dest, values)
+
+
+class StrListArgAction(BaseListArgAction):
+    my_type = str
+
+
+class IntListArgAction(BaseListArgAction):
+    my_type = int
+
+
+AVAILABLE_OPTIONS = {
+    "nodes":
+        {"kargs": ["-n", "--nodes"],
+         "kwargs": {"type": str,
+                    "default": "",
+                    "action": StrListArgAction,
+                    "required": True,
+                    "help": "nodes for pcc - format: <node,>"}},
+    "rwids":
+        {"kargs": ["-w", "--rw-ids"],
+         "kwargs": {"type": str,
+                    "default": "",
+                    "action": IntListArgAction,
+                    "required": True,
+                    "help": "rw ids for pcc - format: <id,>"}},
+    "roids":
+        {"kargs": ["-r", "--ro-ids"],
+         "kwargs": {"type": str,
+                    "default": "",
+                    "action": IntListArgAction,
+                    "required": True,
+                    "help": "ro ids for pcc - format: <id,>"}},
+    "files":
+        {"kargs": ["-f", "--files"],
+         "kwargs": {"type": str,
+                    "default": "",
+                    "action": StrListArgAction,
+                    "required": True,
+                    "help": "files to handle on pcc - format: <path,>"}},
+}
 
 
 class Pcc(object):
@@ -140,14 +193,14 @@ class Pcc(object):
     def _validate_rw_id(self):
         if not self.rw_id:
             raise Exception("Missing rw_id")
-        if not self.rw_id.isdecimal():
-            raise Exception("rw_id is not decimal: {}".format(self.rw_id))
+        if not isinstance(self.rw_id, int):
+            raise Exception("rw_id must be int: {}".format(self.rw_id))
 
     def _validate_ro_id(self):
         if not self.ro_id:
             raise Exception("Missing ro_id")
-        if not self.ro_id.isdecimal():
-            raise Exception("ro_id is not decimal: {}".format(self.ro_id))
+        if not isinstance(self.ro_id, int):
+            raise Exception("ro_id mubst be int: {}".format(self.ro_id))
 
     def _validate_pcc_files(self):
         if not self.pcc_files:
@@ -259,27 +312,6 @@ def setup_logger(name):
     return logger
 
 
-def usage():
-    print("Usage: pcc [options] [action]")
-    print("actions:")
-    print("  attach")
-    print("    Required options: nodes, rw-ids, ro-ids, files")
-    print("  detach")
-    print("    Required options: nodes, files")
-    print("  check-ssh-connection")
-    print("    Required options: nodes")
-    print("  check-files")
-    print("    Required options: files")
-    print("  check-ro-available")
-    print("    Required options: nothing")
-    print("options:")
-    print("  -n / --nodes=<node,>")
-    print("  -w / --rw-ids=<id,>")
-    print("  -r / --ro-ids=<id,>")
-    print("  -f / --files=<path,>")
-    print("  -h / --help")
-
-
 def wrapper_action(node, action):
     try:
         func = node.__getattribute__(action)
@@ -300,55 +332,74 @@ def parallel_do_action(nodes, action):
     return results
 
 
-def parse_arg(arg):
-    if not arg:
-        return []
-    return arg.replace(' ', '').split(',')
-
-
 def main() -> int:
     logger = setup_logger(__name__)
 
-    options, args = getopt.getopt(
-        sys.argv[1:],
-        "n:w:r:f:h",
-        ["nodes=",
-         "rw-ids=",
-         "ro-ids=",
-         "files=",
-         "help"]
-    )
+    parser = argparse.ArgumentParser()
+    sub_parser = parser.add_subparsers(
+        dest="actions",
+        help="Action verb for operation")
+    attach_parser = sub_parser.add_parser("attach")
+    # attach
+    for option in ["nodes", "roids", "rwids", "files"]:
+        attach_parser.add_argument(
+            *AVAILABLE_OPTIONS[option]["kargs"],
+            **AVAILABLE_OPTIONS[option]["kwargs"])
+    # detach
+    detach_parser = sub_parser.add_parser("detach")
+    for option in ["nodes", "roids", "rwids", "files"]:
+        detach_parser.add_argument(
+            *AVAILABLE_OPTIONS[option]["kargs"],
+            **AVAILABLE_OPTIONS[option]["kwargs"])
+    # check-ssh-connection
+    ssh_parser = sub_parser.add_parser("check-ssh-connection")
+    ssh_options = AVAILABLE_OPTIONS["nodes"].copy()
+    ssh_options["kwargs"]["required"] = False
+    ssh_parser.add_argument(
+        *ssh_options["kargs"], **ssh_options["kwargs"])
 
-    # check options
-    nodes, rw_ids, ro_ids, files = ([] for i in range(4))
-    for opt, arg in options:
-        if opt in ('-n', '--nodes'):
-            nodes = parse_arg(arg)
-        elif opt in ('-w', '--rw-ids'):
-            rw_ids = parse_arg(arg)
-        elif opt in ('-r', '--ro-ids'):
-            ro_ids = parse_arg(arg)
-        elif opt in ('-f', '--files'):
-            files.append(arg)
-        elif opt in ('-h', '--help'):
-            usage()
-            return 1
-        else:
-            logger.error("Invalid option [{}]".format(opt))
-            usage()
-            return 1
+    # check-fies
+    files_parser = sub_parser.add_parser("check-files")
+    files_options = AVAILABLE_OPTIONS["files"].copy()
+    files_options["kwargs"]["required"] = False
+    files_parser.add_argument(
+        *files_options["kargs"],
+        **files_options["kwargs"])
 
-    # check action
-    if not args:
-        logger.error("Please input action")
-        usage()
+    # check-ro-available
+    sub_parser.add_parser("check-ro-available")
+
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        parser.print_help()
         return -1
 
-    action = args[0].lower()
+    # check action
+    if not args.actions:
+        logger.error("Please input action")
+        parser.print_help()
+        return -1
+
+    action = args.actions
+    # FIXME: for safety set empty list if it's not required
+    nodes = []
+    ro_ids = []
+    rw_ids = []
+    files = []
+    if hasattr(args, "nodes"):
+        nodes = args.nodes
+    if hasattr(args, "ro_ids"):
+        ro_ids = args.ro_ids
+    if hasattr(args, "rw_ids"):
+        rw_ids = args.rw_ids
+    if hasattr(args, "files"):
+        files = args.files
 
     # Set default
     if action in VALIED_CHK_ACTIONS:
         if not nodes:
+            # FIXME: this is used on both check-ro-available and check-files
             nodes = [os.uname()[1]]
 
     # Create Pcc instances

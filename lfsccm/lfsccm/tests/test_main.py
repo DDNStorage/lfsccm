@@ -51,10 +51,7 @@ class TestMain(BaseTestMain):
 @mock.patch("paramiko.client.SSHClient.connect")
 @mock.patch("paramiko.client.SSHClient.exec_command")
 class TestMainCheckFiles(BaseTestMain):
-    # FIXME: use something like optparse to add options in anywhare
-    # in the args, and handle syntax errors to notify what was wrong
-    # with in the errors.
-    argv = "lfsccm --files=/sample/file:ro:0 check-files"
+    argv = "lfsccm check-files --files=/sample/file:ro:0"
 
     @mock.patch("sys.argv", ["lfsccm", "check-files"])
     def test_check_files_no_files_specified(self, mock_exec, mock_connect):
