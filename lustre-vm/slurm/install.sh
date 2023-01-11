@@ -50,5 +50,7 @@ sudo systemctl enable --now slurmd
 sudo ssh-keygen -N "" -f /root/.ssh/id_rsa
 sudo sh -c "cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys"
 # for idempotent way, remove older host entity from known_hosts file
+set +e
 sudo ssh-keygen -R lima-lustre
+set -e
 sudo ssh -o StrictHostKeyChecking=no root@lima-lustre exit
